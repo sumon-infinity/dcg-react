@@ -24,6 +24,10 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  ShieldAlert,
+  Camera,
+  Send,
+  Lock,
 } from "lucide-react"
 
 type Screen =
@@ -41,6 +45,7 @@ type Screen =
   | "safe-zone"
   | "emergency-call"
   | "medical-alert"
+  | "security-report"
   | "nearest-medical"
   | "health-condition"
   | "psychology-services"
@@ -53,6 +58,11 @@ export default function DCGCrisisGuard() {
   const [otpCode, setOtpCode] = useState(["2", "6", "0", "4"])
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [incidentType, setIncidentType] = useState<string | null>(null)
+  const [isAnonymous, setIsAnonymous] = useState(false)
+  const [incidentLocation, setIncidentLocation] = useState("")
+  const [incidentDescription, setIncidentDescription] = useState("")
+  const [reportSubmitted, setReportSubmitted] = useState(false)
   const [formData, setFormData] = useState({
     studentId: "",
     password: "",
@@ -624,6 +634,14 @@ export default function DCGCrisisGuard() {
                     <Heart className="w-6 h-6 mb-2 text-primary" />
                     <span className="text-sm font-semibold">Psychology</span>
                   </Button>
+                  <Button
+                    onClick={() => handleScreenTransition("security-report")}
+                    variant="outline"
+                    className="col-span-2 flex items-center justify-center gap-2 p-4 h-auto rounded-xl border-2 hover:bg-card transition-all duration-200 hover:shadow-md"
+                  >
+                    <ShieldAlert className="w-6 h-6 text-primary" />
+                    <span className="text-sm font-semibold">Report Security Incident</span>
+                  </Button>
                 </div>
 
                 <div className="mt-8 flex justify-center space-x-4">
@@ -714,6 +732,174 @@ export default function DCGCrisisGuard() {
             </div>
           </div>
         )
+
+      case "security-report": {
+        const incidentTypes = [
+          { id: "harassment", label: "Harassment", icon: User },
+          { id: "theft", label: "Theft", icon: Lock },
+          { id: "suspicious", label: "Suspicious Activity", icon: Eye },
+          { id: "vandalism", label: "Vandalism", icon: AlertTriangle },
+          { id: "assault", label: "Assault", icon: ShieldAlert },
+          { id: "other", label: "Other", icon: HelpCircle },
+        ]
+
+        const resetSecurityForm = () => {
+          setIncidentType(null)
+          setIsAnonymous(false)
+          setIncidentLocation("")
+          setIncidentDescription("")
+          setReportSubmitted(false)
+        }
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 p-6 relative overflow-hidden">
+            <div className="absolute top-10 right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
+            <BackButton
+              onClick={() => {
+                resetSecurityForm()
+                setCurrentScreen("emergency-alert")
+              }}
+            />
+
+            <div className="w-full max-w-sm mx-auto pt-20 relative z-10">
+              {reportSubmitted ? (
+                <Card className="glass-effect border-0 shadow-xl animate-slide-up">
+                  <CardContent className="p-8 text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl">
+                      <Shield className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-3 text-foreground">Report Submitted</h2>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
+                      Campus security has been notified and will review your report. Your reference ID is{" "}
+                      <span className="font-semibold text-foreground">#SEC-{Math.floor(1000 + Math.random() * 9000)}</span>.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        resetSecurityForm()
+                        setCurrentScreen("emergency-alert")
+                      }}
+                      className="w-full bg-gradient-to-r from-primary to-accent text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      Back to Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center mb-6 animate-fade-in">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl shadow-lg flex items-center justify-center mb-3">
+                      <ShieldAlert className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">Report Incident</h2>
+                    <p className="text-sm text-muted-foreground text-center mt-1 text-pretty">
+                      Report a security concern to campus authorities
+                    </p>
+                  </div>
+
+                  <Button className="w-full mb-6 bg-gradient-to-r from-destructive to-red-600 hover:from-destructive/90 hover:to-red-600/90 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300">
+                    <PhoneCall className="w-5 h-5 mr-2" />
+                    Call Campus Security Now
+                  </Button>
+
+                  <Card className="glass-effect border-0 shadow-xl animate-slide-up">
+                    <CardContent className="p-6 space-y-6">
+                      <div>
+                        <label className="text-sm font-semibold text-foreground mb-3 block">Incident Type</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {incidentTypes.map((type) => {
+                            const Icon = type.icon
+                            const selected = incidentType === type.id
+                            return (
+                              <button
+                                key={type.id}
+                                onClick={() => setIncidentType(type.id)}
+                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${
+                                  selected
+                                    ? "border-primary bg-primary/10 shadow-md"
+                                    : "border-border bg-card hover:bg-muted"
+                                }`}
+                              >
+                                <Icon
+                                  className={`w-5 h-5 ${selected ? "text-primary" : "text-muted-foreground"}`}
+                                />
+                                <span
+                                  className={`text-xs font-medium text-center leading-tight ${
+                                    selected ? "text-primary" : "text-foreground"
+                                  }`}
+                                >
+                                  {type.label}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-semibold text-foreground mb-2 block">Location</label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            value={incidentLocation}
+                            onChange={(e) => setIncidentLocation(e.target.value)}
+                            placeholder="e.g. Library, 2nd floor"
+                            className="pl-9 rounded-xl"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-semibold text-foreground mb-2 block">Description</label>
+                        <textarea
+                          value={incidentDescription}
+                          onChange={(e) => setIncidentDescription(e.target.value)}
+                          placeholder="Describe what happened..."
+                          rows={4}
+                          className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                      </div>
+
+                      <button className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:bg-muted transition-all duration-200">
+                        <Camera className="w-5 h-5" />
+                        <span className="text-sm font-medium">Add Photo Evidence</span>
+                      </button>
+
+                      <button
+                        onClick={() => setIsAnonymous(!isAnonymous)}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-all duration-200"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Lock className="w-5 h-5 text-primary" />
+                          <div className="text-left">
+                            <p className="text-sm font-semibold text-foreground">Report Anonymously</p>
+                            <p className="text-xs text-muted-foreground">Hide your identity</p>
+                          </div>
+                        </div>
+                        <div
+                          className={`w-11 h-6 rounded-full transition-all duration-200 flex items-center px-0.5 ${
+                            isAnonymous ? "bg-primary justify-end" : "bg-border justify-start"
+                          }`}
+                        >
+                          <div className="w-5 h-5 bg-white rounded-full shadow-sm" />
+                        </div>
+                      </button>
+                    </CardContent>
+                  </Card>
+
+                  <Button
+                    onClick={() => setReportSubmitted(true)}
+                    disabled={!incidentType}
+                    className="w-full mt-6 bg-gradient-to-r from-primary to-accent text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  >
+                    <Send className="w-5 h-5 mr-2" />
+                    Submit Report
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        )
+      }
 
       case "medical-alert":
         return (
